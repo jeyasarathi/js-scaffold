@@ -13,7 +13,7 @@ var gulp = require('gulp'),
     revCollector = require('gulp-rev-collector'),
     uglify = require('gulp-uglify'),
     sass = require('gulp-sass'),
-    path = require('path')
+    path = require('path'),
     mktree = require('mktree');
 
 var baseDir = {
@@ -205,8 +205,8 @@ gulp.task('dist-js-plugins', ['js-plugins'], function () {
 
 });
 
-//gulp.task('watch', function () {
-//    gulp.watch(config.sassSrc, ['sass']);
-//    gulp.watch(config.jsLibSrc + '**/*.js', ['js-lib']);
-//    gulp.watch(config.jsVendorSrc + '**/*.js', ['js-plugins']);
-//});
+gulp.task('watch', function () {
+    gulp.watch(config.stylesSrc, ['sass']);
+    gulp.watch(path.join(config.jsLibSrc, '**/*.js'), ['js-lib']);
+    gulp.watch(path.joing(config.jsVendorSrc, '**/*.js'), ['js-plugins']);
+});
