@@ -33,6 +33,7 @@
     "gulp-uglify": "^1.5.1",
     "gulp-util": "^3.0.7",
     "jshint": "^2.8.0",
+    "mktree": "^1.0.0",
     "node-neat": "^1.7.2",
     "nunjucks": "^2.2.0",
     "shipit-cli": "^1.4.1",

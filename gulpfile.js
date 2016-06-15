@@ -1,7 +1,3 @@
-/**
- * Created by root on 15/6/16.
- */
-
 var gulp = require('gulp'),
     nodemon = require('gulp-nodemon'),
     notify = require('gulp-notify'),
@@ -11,37 +7,40 @@ var gulp = require('gulp'),
     gutil = require('gulp-util'),
     concat = require('gulp-concat'),
     plumber = require('gulp-plumber'),
-    imagemin = require('gulp-imagemin'),
     minifyCSS = require('gulp-minify-css'),
-    minifyHtml = require('gulp-minify-html'),
     rev = require('gulp-rev'),
     jshint = require('gulp-jshint'),
-    imagemin = require('gulp-imagemin'),
     revCollector = require('gulp-rev-collector'),
     uglify = require('gulp-uglify'),
-    sass = require('gulp-sass');
+    sass = require('gulp-sass'),
+    path = require('path')
+    mktree = require('mktree');
 
-var publicDir = "public/";
+var baseDir = {
+    sourceDirectory: "htdocs/",
+    buildDirectory: "build/",
+    revDirectory: "build/rev/",
+    distDirectory: "public/"
+};
+
+var basePathDir = {
+    jsDir: "javascripts/",
+    stylesDir: "stylesheets/",
+    imagesDir: "images/",
+    htmlDir: "views/",
+    jsVendorDir: "vendor/",
+    jsLibDir: "libraries/",
+    scssDir: "scss/"
+}
+
 var config = {
-
     // Source directories
 
-    jsVendorSrc: publicDir + "javascripts/src/vendor/",
-    jsLibSrc: publicDir + "javascripts/src/libraries/",
-    sassSrc: publicDir + "stylesheets/scss/",
-    imgSrc: publicDir + "images/",
-    htmlSrc: publicDir + "views/",
-
-    // Build directory
-
-    buildDir: 'build/',
-    revDir: 'build/rev/',
-
-    // Distribution directories
-
-    jsDistDir: publicDir + "javascripts/dist/vendor/",
-    jsLibDistDir: publicDir + "/javascripts/dist/libraries/",
-    cssDistDir: publicDir + "stylesheets/dist/"
+    jsVendorSrc: path.join(__dirname, baseDir.sourceDirectory, basePathDir.jsDir, basePathDir.jsVendorDir),
+    jsLibSrc: path.join(__dirname, baseDir.sourceDirectory, basePathDir.jsDir, basePathDir.jsLibDir),
+    stylesSrc: path.join(__dirname, baseDir.sourceDirectory, basePathDir.stylesDir, basePathDir.scssDir),
+    imagesSrc: path.join(__dirname, baseDir.sourceDirectory, basePathDir.imagesDir),
+    htmlSrc: path.join(__dirname, baseDir.sourceDirectory, basePathDir.htmlDir)
 
 };
 
@@ -69,7 +68,7 @@ if (process.env.NODE_ENV === 'prod') {
 }
 
 gulp.task('clean', function (cb) {
-    del([config.buildDir + "js/vendor", config.buildDir + "js/libraries",  config.buildDir + "css"], cb);
+    del([baseDir.buildDirectory], cb);
 });
 
 gulp.task('build', ['build-css', 'build-js'], function (cb) {
@@ -86,29 +85,45 @@ gulp.task('dist', ['dist-css', 'dist-js'], function (cb) {
 gulp.task('build-css', ['sass']);
 
 gulp.task('sass', function () {
-    return gulp.src(config.sassSrc + '**/*.scss')
-        .pipe(sass({
-            includePaths: require('node-neat').includePaths,
-            style: 'nested',
-            onError: function () {
-                console.log("Error in scss");
-            }
-        }))
-        .pipe(plumber({errorHandler: onError}))
-        .pipe(gulp.dest(config.buildDir + 'css/'))
-        .pipe(livereload());
+    return mktree([path.join(__dirname, baseDir.buildDirectory, basePathDir.stylesDir)], function (err) {
+        if (err) {
+            console.error(err)
+        }
+        else {
+            return gulp.src(config.stylesSrc + '**/*.scss')
+                .pipe(sass({
+                    includePaths: require('node-neat').includePaths,
+                    style: 'nested',
+                    onError: function () {
+                        console.log("Error in scss");
+                    }
+                }))
+                .pipe(plumber({errorHandler: onError}))
+                .pipe(gulp.dest(path.join(__dirname, baseDir.buildDirectory, basePathDir.stylesDir)))
+                .pipe(livereload());
+        }
+    });
+
 });
 
 gulp.task('dist-css', ['build-css'], function () {
-    return gulp.src([
-            config.buildDir + 'css/*'
-        ])
-        .pipe(revCollector())
-        .pipe(minifyCSS())
-        .pipe(rev())
-        .pipe(gulp.dest(config.cssDistDir))
-        .pipe(rev.manifest())
-        .pipe(gulp.dest(config.revDir + 'css'));
+    return mktree([path.join(__dirname, baseDir.distDirectory, basePathDir.stylesDir), path.join(__dirname, baseDir.revDirectory, basePathDir.stylesDir)], function (err) {
+        if (err) {
+            console.error(err)
+        }
+        else {
+            return gulp.src([
+                    path.join(__dirname, baseDir.buildDirectory, basePathDir.stylesDir, "*.css")
+                ])
+                .pipe(revCollector())
+                .pipe(minifyCSS())
+                .pipe(rev())
+                .pipe(gulp.dest(path.join(__dirname, baseDir.distDirectory, basePathDir.stylesDir)))
+                .pipe(rev.manifest())
+                .pipe(gulp.dest(path.join(__dirname, baseDir.revDirectory, basePathDir.stylesDir)));
+        }
+    });
+
 });
 
 /*
@@ -117,46 +132,81 @@ gulp.task('dist-css', ['build-css'], function () {
 gulp.task('build-js', ['js-lib', 'js-plugins']);
 
 gulp.task('js-lib', function () {
-    return gulp.src(config.jsLibSrc + '*.js')
-        .pipe(plumber({errorHandler: onError}))
-        .pipe(changed(config.buildDir + 'js/libraries'))
-        .pipe(jshint())
-        .pipe(jshint.reporter('default'))
-        .pipe(gulp.dest(config.buildDir + 'js/libraries'))
-        .pipe(livereload());
+    return mktree([path.join(__dirname, baseDir.buildDirectory, basePathDir.jsDir, basePathDir.jsLibDir)], function (err) {
+        if (err) {
+            console.error(err)
+        }
+        else {
+
+            return gulp.src(path.join(config.jsLibSrc, '*.js'))
+                .pipe(plumber({errorHandler: onError}))
+                .pipe(changed(path.join(__dirname, baseDir.buildDirectory, basePathDir.jsDir, basePathDir.jsLibDir)))
+                .pipe(jshint())
+                .pipe(jshint.reporter('default'))
+                .pipe(gulp.dest(path.join(__dirname, baseDir.buildDirectory, basePathDir.jsDir, basePathDir.jsLibDir)))
+                .pipe(livereload());
+        }
+    });
+
 });
 
 gulp.task('js-plugins', [], function () {
-    return gulp.src([
-            config.jsVendorSrc + "**/*.js"
-        ])
-        .pipe(concat('vendor.min.js'))
-        .pipe(gulp.dest(config.buildDir + 'js/vendor'))
-        .pipe(livereload());
+    return mktree([path.join(__dirname, baseDir.buildDirectory, basePathDir.jsDir, basePathDir.jsVendorDir)], function (err) {
+        if (err) {
+            console.error(err)
+        }
+        else {
+            return gulp.src([
+                    path.join(config.jsVendorSrc, "*.js")
+                ])
+                .pipe(concat('vendor.js'))
+                .pipe(gulp.dest(path.join(__dirname, baseDir.buildDirectory, basePathDir.jsDir, basePathDir.jsVendorDir)))
+                .pipe(livereload());
+        }
+    });
+
 });
 
 gulp.task('dist-js', ['dist-js-lib', 'dist-js-plugins']);
 
 gulp.task('dist-js-lib', ['js-lib'], function () {
-    return gulp.src(config.buildDir + 'js/libraries/*')
-        .pipe(uglify())
-        .pipe(rev())
-        .pipe(gulp.dest(config.jsLibDistDir))
-        .pipe(rev.manifest())
-        .pipe(gulp.dest(config.revDir + 'js/libraries'));
+    return mktree([path.join(__dirname, baseDir.distDirectory, basePathDir.jsDir, basePathDir.jsLibDir), path.join(__dirname, baseDir.revDirectory, basePathDir.jsDir, basePathDir.jsLibDir)], function (err) {
+        if (err) {
+            console.error(err)
+        }
+        else {
+
+            return gulp.src(path.join(__dirname, baseDir.buildDirectory, basePathDir.jsDir, basePathDir.jsLibDir, "*.js"))
+                .pipe(uglify())
+                .pipe(rev())
+                .pipe(gulp.dest(path.join(__dirname, baseDir.distDirectory, basePathDir.jsDir, basePathDir.jsLibDir)))
+                .pipe(rev.manifest())
+                .pipe(gulp.dest(path.join(__dirname, baseDir.revDirectory, basePathDir.jsDir, basePathDir.jsLibDir)));
+        }
+    });
+
 });
 
 gulp.task('dist-js-plugins', ['js-plugins'], function () {
-    return gulp.src(config.buildDir + 'js/vendor/*js')
-        .pipe(uglify())
-        .pipe(rev())
-        .pipe(gulp.dest(config.jsDistDir))
-        .pipe(rev.manifest())
-        .pipe(gulp.dest(config.revDir + 'js/vendor'));
+    return mktree([path.join(__dirname, baseDir.distDirectory, basePathDir.jsDir, basePathDir.jsVendorDir), path.join(__dirname, baseDir.revDirectory, basePathDir.jsDir, basePathDir.jsVendorDir)], function (err) {
+        if (err) {
+            console.error(err)
+        }
+        else {
+
+            return gulp.src(path.join(__dirname, baseDir.buildDirectory, basePathDir.jsDir, basePathDir.jsVendorDir, '*.js'))
+                .pipe(uglify())
+                .pipe(rev())
+                .pipe(gulp.dest(path.join(__dirname, baseDir.distDirectory, basePathDir.jsDir, basePathDir.jsVendorDir)))
+                .pipe(rev.manifest())
+                .pipe(gulp.dest(path.join(__dirname, baseDir.revDirectory, basePathDir.jsDir, basePathDir.jsVendorDir)));
+        }
+    });
+
 });
 
-gulp.task('watch', function () {
-    gulp.watch(config.sassSrc, ['sass']);
-    gulp.watch(config.jsLibSrc + '**/*.js', ['js-lib']);
-    gulp.watch(config.jsVendorSrc + '**/*.js', ['js-plugins']);
-});
+//gulp.task('watch', function () {
+//    gulp.watch(config.sassSrc, ['sass']);
+//    gulp.watch(config.jsLibSrc + '**/*.js', ['js-lib']);
+//    gulp.watch(config.jsVendorSrc + '**/*.js', ['js-plugins']);
+//});

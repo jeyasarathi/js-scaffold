@@ -48,7 +48,7 @@ $: npm install --global gulp
 ````
 
 
-#Build:
+#Build and Deploy:
 
 ##Clean:
 
