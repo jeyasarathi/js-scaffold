@@ -208,5 +208,5 @@ gulp.task('dist-js-plugins', ['js-plugins'], function () {
 gulp.task('watch', function () {
     gulp.watch(config.stylesSrc, ['sass']);
     gulp.watch(path.join(config.jsLibSrc, '**/*.js'), ['js-lib']);
-    gulp.watch(path.joing(config.jsVendorSrc, '**/*.js'), ['js-plugins']);
+    gulp.watch(path.join(config.jsVendorSrc, '**/*.js'), ['js-plugins']);
 });
