@@ -2,45 +2,46 @@
  * Created by root on 15/6/16.
  */
 
-var gulp         = require('gulp'),
-    nodemon      = require('gulp-nodemon'),
-    notify       = require('gulp-notify'),
-    livereload   = require('gulp-livereload'),
-    changed      = require('gulp-changed'),
-    del          = require('del'),
-    gutil        = require('gulp-util'),
-    concat       = require('gulp-concat'),
-    plumber      = require('gulp-plumber'),
-    imagemin     = require('gulp-imagemin'),
-    minifyCSS    = require('gulp-minify-css'),
-    minifyHtml   = require('gulp-minify-html'),
-    rev          = require('gulp-rev'),
-    jshint       = require('gulp-jshint'),
-    imagemin     = require('gulp-imagemin'),
+var gulp = require('gulp'),
+    nodemon = require('gulp-nodemon'),
+    notify = require('gulp-notify'),
+    livereload = require('gulp-livereload'),
+    changed = require('gulp-changed'),
+    del = require('del'),
+    gutil = require('gulp-util'),
+    concat = require('gulp-concat'),
+    plumber = require('gulp-plumber'),
+    imagemin = require('gulp-imagemin'),
+    minifyCSS = require('gulp-minify-css'),
+    minifyHtml = require('gulp-minify-html'),
+    rev = require('gulp-rev'),
+    jshint = require('gulp-jshint'),
+    imagemin = require('gulp-imagemin'),
     revCollector = require('gulp-rev-collector'),
-    uglify       = require('gulp-uglify'),
-    sass         = require('gulp-sass');
+    uglify = require('gulp-uglify'),
+    sass = require('gulp-sass');
+
+var publicDir = "public/";
 var config = {
 
     // Source directories
 
-    publicDir: "./public/",
-    jsVendorSrc: this.publicDir + "javascripts/src/",
-    jsLibSrc: this.publicDir + "javascripts/libraries/",
-    sassSrc: this.publicDir + "stylesheets/scss/",
-    imgSrc: this.publicDir + "images/",
-    htmlSrc: this.publicDir + "views/",
+    jsVendorSrc: publicDir + "javascripts/src/vendor/",
+    jsLibSrc: publicDir + "javascripts/src/libraries/",
+    sassSrc: publicDir + "stylesheets/scss/",
+    imgSrc: publicDir + "images/",
+    htmlSrc: publicDir + "views/",
 
     // Build directory
 
-    buildDir: './build/',
-    revDir:   './build/rev/',
+    buildDir: 'build/',
+    revDir: 'build/rev/',
 
     // Distribution directories
 
-    jsDistDir: this.publicDir + "javascripts/dist/",
-    jsLibDistDir: this.publicDir + "/javascripts/dist/libraries/",
-    cssDistDir: this.publicDir + "stylesheets/dist/"
+    jsDistDir: publicDir + "javascripts/dist/vendor/",
+    jsLibDistDir: publicDir + "/javascripts/dist/libraries/",
+    cssDistDir: publicDir + "stylesheets/dist/"
 
 };
 
@@ -89,16 +90,16 @@ gulp.task('sass', function () {
         .pipe(sass({
             includePaths: require('node-neat').includePaths,
             style: 'nested',
-            onError: function(){
+            onError: function () {
                 console.log("Error in scss");
             }
         }))
-        .pipe(plumber({ errorHandler: onError }))
+        .pipe(plumber({errorHandler: onError}))
         .pipe(gulp.dest(config.buildDir + 'css/'))
         .pipe(livereload());
 });
 
-gulp.task('dist-css', ['build-css'], function() {
+gulp.task('dist-css', ['build-css'], function () {
     return gulp.src([
             config.buildDir + 'css/*'
         ])
@@ -115,9 +116,9 @@ gulp.task('dist-css', ['build-css'], function() {
  */
 gulp.task('build-js', ['js-lib', 'js-plugins']);
 
-gulp.task('js-lib', function() {
+gulp.task('js-lib', function () {
     return gulp.src(config.jsLibSrc + '*.js')
-        .pipe(plumber({ errorHandler: onError }))
+        .pipe(plumber({errorHandler: onError}))
         .pipe(changed(config.buildDir + 'js/libraries'))
         .pipe(jshint())
         .pipe(jshint.reporter('default'))
@@ -125,9 +126,9 @@ gulp.task('js-lib', function() {
         .pipe(livereload());
 });
 
-gulp.task('js-plugins', [], function() {
+gulp.task('js-plugins', [], function () {
     return gulp.src([
-            config.jsLibSrc
+            config.jsVendorSrc + "**/*.js"
         ])
         .pipe(concat('vendor.js'))
         .pipe(gulp.dest(config.buildDir + 'js/vendor'))
@@ -136,7 +137,7 @@ gulp.task('js-plugins', [], function() {
 
 gulp.task('dist-js', ['dist-js-lib', 'dist-js-plugins']);
 
-gulp.task('dist-js-lib', ['js-lib'], function() {
+gulp.task('dist-js-lib', ['js-lib'], function () {
     return gulp.src(config.buildDir + 'js/libraries/*')
         .pipe(uglify())
         .pipe(rev())
@@ -145,11 +146,17 @@ gulp.task('dist-js-lib', ['js-lib'], function() {
         .pipe(gulp.dest(config.revDir + 'js/libraries'));
 });
 
-gulp.task('dist-js-plugins', ['js-plugins'], function() {
-    return gulp.src(config.buildDir + 'js/libraries/*')
+gulp.task('dist-js-plugins', ['js-plugins'], function () {
+    return gulp.src(config.buildDir + 'js/vendor/*')
         .pipe(uglify())
         .pipe(rev())
         .pipe(gulp.dest(config.jsDistDir))
         .pipe(rev.manifest())
         .pipe(gulp.dest(config.revDir + 'js/vendor'));
+});
+
+gulp.task('watch', function () {
+    gulp.watch(config.sassSrc, ['sass']);
+    gulp.watch(config.jsLibSrc + '**/*.js', ['js-lib']);
+    gulp.watch(config.jsVendorSrc + '**/*.js', ['js-plugins']);
 });
