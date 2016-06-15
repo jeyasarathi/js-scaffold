@@ -69,7 +69,7 @@ if (process.env.NODE_ENV === 'prod') {
 }
 
 gulp.task('clean', function (cb) {
-    del([config.jsDistDir, config.jsLibDistDir, config.cssDistDir], cb);
+    del([config.buildDir + "js/vendor", config.buildDir + "js/libraries",  config.buildDir + "css"], cb);
 });
 
 gulp.task('build', ['build-css', 'build-js'], function (cb) {
@@ -130,7 +130,7 @@ gulp.task('js-plugins', [], function () {
     return gulp.src([
             config.jsVendorSrc + "**/*.js"
         ])
-        .pipe(concat('vendor.js'))
+        .pipe(concat('vendor.min.js'))
         .pipe(gulp.dest(config.buildDir + 'js/vendor'))
         .pipe(livereload());
 });
@@ -147,7 +147,7 @@ gulp.task('dist-js-lib', ['js-lib'], function () {
 });
 
 gulp.task('dist-js-plugins', ['js-plugins'], function () {
-    return gulp.src(config.buildDir + 'js/vendor/*')
+    return gulp.src(config.buildDir + 'js/vendor/*js')
         .pipe(uglify())
         .pipe(rev())
         .pipe(gulp.dest(config.jsDistDir))
