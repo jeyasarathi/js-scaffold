@@ -8,13 +8,18 @@ var gulp = require('gulp'),
     concat = require('gulp-concat'),
     plumber = require('gulp-plumber'),
     minifyCSS = require('gulp-minify-css'),
+    minifyHtml = require('gulp-minify-html'),
     rev = require('gulp-rev'),
     jshint = require('gulp-jshint'),
     revCollector = require('gulp-rev-collector'),
     uglify = require('gulp-uglify'),
     sass = require('gulp-sass'),
     path = require('path'),
-    mktree = require('mktree');
+    mktree = require('mktree'),
+    es = require('event-stream'),
+    inject = require('gulp-inject');
+
+var appStream, vendorStream;
 
 var baseDir = {
     sourceDirectory: "htdocs/",
@@ -71,11 +76,11 @@ gulp.task('clean', function (cb) {
     del([baseDir.buildDirectory], cb);
 });
 
-gulp.task('build', ['build-css', 'build-js'], function (cb) {
+gulp.task('build', ['build-css', 'build-js', 'build-html'], function (cb) {
     nodemonServerInit();
 });
 
-gulp.task('dist', ['dist-css', 'dist-js'], function (cb) {
+gulp.task('dist', ['dist-css', 'dist-js', 'dist-html'], function (cb) {
     nodemonServerInit();
 });
 
@@ -138,7 +143,8 @@ gulp.task('js-lib', function () {
         }
         else {
 
-            return gulp.src(path.join(config.jsLibSrc, '*.js'))
+            return gulp.src([path.join(config.jsLibSrc, '**/*.js')])
+                .pipe(concat('library.js'))
                 .pipe(plumber({errorHandler: onError}))
                 .pipe(changed(path.join(__dirname, baseDir.buildDirectory, basePathDir.jsDir, basePathDir.jsLibDir)))
                 .pipe(jshint())
@@ -156,9 +162,7 @@ gulp.task('js-plugins', [], function () {
             console.error(err)
         }
         else {
-            return gulp.src([
-                    path.join(config.jsVendorSrc, "*.js")
-                ])
+            return gulp.src([path.join(config.jsVendorSrc, '*.js')])
                 .pipe(concat('vendor.js'))
                 .pipe(gulp.dest(path.join(__dirname, baseDir.buildDirectory, basePathDir.jsDir, basePathDir.jsVendorDir)))
                 .pipe(livereload());
@@ -176,7 +180,7 @@ gulp.task('dist-js-lib', ['js-lib'], function () {
         }
         else {
 
-            return gulp.src(path.join(__dirname, baseDir.buildDirectory, basePathDir.jsDir, basePathDir.jsLibDir, "*.js"))
+            return gulp.src([path.join(__dirname, baseDir.buildDirectory, basePathDir.jsDir, basePathDir.jsLibDir, "*.js")])
                 .pipe(uglify())
                 .pipe(rev())
                 .pipe(gulp.dest(path.join(__dirname, baseDir.distDirectory, basePathDir.jsDir, basePathDir.jsLibDir)))
@@ -202,6 +206,48 @@ gulp.task('dist-js-plugins', ['js-plugins'], function () {
                 .pipe(gulp.dest(path.join(__dirname, baseDir.revDirectory, basePathDir.jsDir, basePathDir.jsVendorDir)));
         }
     });
+
+});
+
+/*
+ HTML Tasks
+ */
+gulp.task('build-html', function () {
+    return mktree([path.join(__dirname, baseDir.buildDirectory, basePathDir.htmlDir)], function (err) {
+        if (err) {
+            console.error(err)
+        }
+        else {
+
+            return gulp.src(path.join(__dirname, baseDir.sourceDirectory, basePathDir.htmlDir, '**/*.html'))
+                .pipe(gulp.dest(path.join(__dirname, baseDir.buildDirectory, basePathDir.htmlDir)))
+                .pipe(livereload());
+        }
+    });
+
+
+});
+
+gulp.task('dist-html', ['build-html', 'dist-js', 'dist-css'], function () {
+    return mktree([path.join(__dirname, baseDir.buildDirectory, basePathDir.htmlDir)], function (err) {
+        if (err) {
+            console.error(err)
+        }
+        else {
+
+            return gulp.src([
+                    path.join(__dirname, baseDir.buildDirectory, basePathDir.htmlDir, "**/*.html")
+                ])
+                .pipe(inject(gulp.src([path.join(basePathDir.jsDir, basePathDir.jsVendorDir, "*.js"), path.join(basePathDir.jsDir, basePathDir.jsLibDir, "*.js")], {read: false, cwd: path.join(__dirname, baseDir.distDirectory)}, {relative: false})))
+                .pipe(revCollector())
+                .pipe(minifyHtml({
+                    conditionals: true,
+                    quotes: true
+                }))
+                .pipe(gulp.dest(path.join(__dirname, baseDir.distDirectory, basePathDir.htmlDir)));
+        }
+    });
+
 
 });
 

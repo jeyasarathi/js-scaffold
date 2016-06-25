@@ -68,7 +68,7 @@ $: gulp build
 
 ##Dist:
 
-Gulp dist minifies (JS/CSS) and copies the build files into distribution directories
+Gulp dist minifies (JS/CSS/HTML) and copies the build files into distribution directories
 
 ````
 $: gulp dist
