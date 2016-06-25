@@ -238,6 +238,7 @@ gulp.task('dist-html', ['build-html', 'dist-js', 'dist-css'], function () {
             return gulp.src([
                     path.join(__dirname, baseDir.buildDirectory, basePathDir.htmlDir, "**/*.html")
                 ])
+                .pipe(inject(gulp.src([path.join(basePathDir.stylesDir, "*.css")], {read: false, cwd: path.join(__dirname, baseDir.distDirectory)}, {relative: false})))
                 .pipe(inject(gulp.src([path.join(basePathDir.jsDir, basePathDir.jsVendorDir, "*.js"), path.join(basePathDir.jsDir, basePathDir.jsLibDir, "*.js")], {read: false, cwd: path.join(__dirname, baseDir.distDirectory)}, {relative: false})))
                 .pipe(revCollector())
                 .pipe(minifyHtml({
@@ -249,10 +250,4 @@ gulp.task('dist-html', ['build-html', 'dist-js', 'dist-css'], function () {
     });
 
 
-});
-
-gulp.task('watch', function () {
-    gulp.watch(config.stylesSrc, ['sass']);
-    gulp.watch(path.join(config.jsLibSrc, '**/*.js'), ['js-lib']);
-    gulp.watch(path.join(config.jsVendorSrc, '**/*.js'), ['js-plugins']);
 });

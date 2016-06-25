@@ -15,7 +15,7 @@
   * JS Lint
   * Istanbul JS Code Coverage and Reports
 
-#Installation:
+#Installation for ubuntu:
 
 ##NodeJS/npm:
 
